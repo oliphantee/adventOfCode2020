@@ -65,7 +65,7 @@ tot=1
 for j in range(len(maybePossible)):
     for i in range(6):
         if maybePossible[j][i]==1:
-            print(int(myTicket[j]))
+            #print(int(myTicket[j]))
             tot*=int(myTicket[j])
 
 print(tot) # part 2 answer
