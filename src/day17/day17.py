@@ -1,124 +1,67 @@
-inputFile=open("testCase.txt")
+inputFile=open("input.txt")
 import copy as cp
 
 
 class grid:
-    def __init__(self,initialState):
-        self.matrix=[]
-        for x in range(23):
-            self.matrix+=[[]]
-            for y in range(23):
-                self.matrix[x]+=[[]]
-                for z in range(15):
-                    self.matrix[x][y]+=["."]
-        z=7
-        for x in range(7,len(initialState)+7):
-            for y in range(7,len(initialState[x-7])+7):
-                if initialState[x-7][y-7]=="#":
-                    self.matrix[x][y][z]=initialState[x-7][y-7]
+    def __init__(self,initialState): # for part 1, just remove all of the 4d portions of the code
+        self.blackSet=set()
+        z=0
+        a=0 # I'm not sure what to use as the 4th dimension, so lets start at the beginning of the alphabet
+        for x in range(0,len(initialState)):
+            for y in range(0,len(initialState[x])):
+                if initialState[x][y]=="#":
+                    self.blackSet.add((x,y,z,a))
 
-    def fillSides(self):
-        if "#" in self.matrix[0]:
-            for y in range(len(self.matrix[0])):
-                for z in range(len(self.matrix[0][y])):
-                    self.matrix[:][y][z]=["."]+self.matrix[:][y][z]
+    def printGrid(self):
+        for a in range(-3,3):
+            for z in range(-3,3):
+                for y in range(-3,8):
+                    for x in range(-3,8):
+                        if (x,y,z,a) in self.blackSet:
+                            print("#",end="")
+                        else:
+                            print(".", end="")
+                    print()
+                print()
+            print()
 
-        if "#" in self.matrix[-1]:
-            for y in range(len(self.matrix[-1])):
-                for z in range(len(self.matrix[-1][y])):
-                    self.matrix[:][y][z]=self.matrix[:][y][z]+["."]
+    def getNeighbors(self,x,y,z,a):
+        retSet=set()
+        for i in range(x-1,x+2):
+            for j in range(y-1,y+2):
+                for k in range(z-1,z+2):
+                    for l in range(a-1,a+2):
+                        retSet.add((i,j,k,l))
+        retSet.remove((x,y,z,a))
+        return retSet
 
-        if "#" in self.matrix[:][0]:
-            for x in range(len(self.matrix)):
-                for z in range(len(self.matrix[x][0])):
-                    self.matrix[x][:][z]=["."]+self.matrix[x][:][z]
-
-        if "#" in self.matrix[:][-1]:
-            for x in range(len(self.matrix)):
-                for z in range(len(self.matrix[x][-1])):
-                    self.matrix[x][:][z]=self.matrix[x][:][z]+["."]
-
-        if "#" in self.matrix[:][:][0]:
-            for x in range(len(self.matrix)):
-                for y in range(len(self.matrix[x])):
-                    self.matrix[x][y][:]=["."]+self.matrix[x][y][:]
-
-        if "#" in self.matrix[-1]:
-            for x in range(len(self.matrix)):
-                for y in range(len(self.matrix[x])):
-                    self.matrix[x][y][:]=self.matrix[x][y][:]+["."]
-
-    def getNeighbors(self,x,y,z):
-        retList=[]
-        retList+=[self.matrix[x][y][z+1]]
-        retList+=[self.matrix[x][y][z-1]]
-        retList+=[self.matrix[x][y+1][z]]
-        retList+=[self.matrix[x][y-1][z]]
-        retList+=[self.matrix[x+1][y][z]]
-        retList+=[self.matrix[x-1][y][z]]
-        retList+=[self.matrix[x+1][y+1][z]]
-        retList+=[self.matrix[x-1][y+1][z]]
-        retList+=[self.matrix[x+1][y-1][z]]
-        retList+=[self.matrix[x+1][y+1][z+1]]
-        retList+=[self.matrix[x-1][y+1][z+1]]
-        retList+=[self.matrix[x+1][y-1][z+1]]
-        retList+=[self.matrix[x+1][y+1][z-1]]
-        retList+=[self.matrix[x-1][y+1][z-1]]
-        retList+=[self.matrix[x+1][y-1][z-1]]
-        retList+=[self.matrix[x][y+1][z+1]]
-        retList+=[self.matrix[x][y+1][z+1]]
-        retList+=[self.matrix[x][y-1][z+1]]
-        retList+=[self.matrix[x][y+1][z-1]]
-        retList+=[self.matrix[x][y+1][z-1]]
-        retList+=[self.matrix[x][y-1][z-1]]
-        retList+=[self.matrix[x+1][y][z+1]]
-        retList+=[self.matrix[x-1][y][z+1]]
-        retList+=[self.matrix[x+1][y][z+1]]
-        retList+=[self.matrix[x+1][y][z-1]]
-        retList+=[self.matrix[x-1][y][z-1]]
-        retList+=[self.matrix[x+1][y][z-1]]
-        return retList
-
-    def getScore(self,x,y,z):
-        neighbors=self.getNeighbors(x,y,z)
+    def getScore(self,x,y,z,a):
+        neighbors=self.getNeighbors(x,y,z,a)
         count=0
         for i in neighbors:
-            if i=="#":
+            if i in self.blackSet:
                 count+=1
         return count
 
     def getTotAlive(self):
-        count=0
-        for x in self.matrix:
-            for y in x:
-                for z in y:
-                    if z=="#":
-                        count+=1
-        return count
+        return len(self.blackSet)
 
     def newStep(self):
-        self.fillSides()
-        newMatrix=cp.deepcopy(self.matrix)
-        for x in range(1,len(self.matrix)-1):
-            for y in range(1,len(self.matrix[x])-1):
-                for z in range(1,len(self.matrix[x][y])-1):
-                    score=self.getScore(x,y,z)
-                    if score==3:
-                        newMatrix[x][y][z]="#"
-                    elif score==2 and self.matrix[x][y][z]=="#":
-                        newMatrix[x][y][z]="#"
-                    else:
-                        newMatrix[x][y][z]="."
-        self.matrix=newMatrix
-
-    def print(self):
-        for x in range(len(self.matrix)):
-            #if "#" in self.matrix[x][:][:]:
-                for y in range(len(self.matrix[x])):
-                    for z in range(len(self.matrix[x][y])):
-                        print(self.matrix[x][y][z],end=",")
-                    print("")
-                print("")
+        newBlackSet=cp.deepcopy(self.blackSet)
+        setToCheck=set()
+        for loc in self.blackSet:
+            if loc not in setToCheck:
+                setToCheck.add(loc)
+            for neighbor in self.getNeighbors(loc[0],loc[1],loc[2],loc[3]):
+                if neighbor not in setToCheck:
+                    setToCheck.add(neighbor)
+        for loc in setToCheck:
+            score=self.getScore(loc[0],loc[1],loc[2],loc[3])
+            if loc in self.blackSet and score!=2 and score!=3:
+                newBlackSet.remove(loc)
+            elif loc not in self.blackSet and score==3:
+                newBlackSet.add(loc)
+        self.blackSet=newBlackSet
 
 inputText=[]
 for line in inputFile:
@@ -126,13 +69,22 @@ for line in inputFile:
 
 myGrid=grid(inputText)
 print(myGrid.getTotAlive())
-myGrid.print()
+myGrid.printGrid()
 myGrid.newStep()
-myGrid.print()
-myGrid.newStep()
-#myGrid.newStep()
-#myGrid.newStep()
-#myGrid.newStep()
-#myGrid.newStep()
 print(myGrid.getTotAlive())
-#myGrid.print()
+#myGrid.printGrid()
+myGrid.newStep()
+print(myGrid.getTotAlive())
+#myGrid.printGrid()
+myGrid.newStep()
+print(myGrid.getTotAlive())
+#myGrid.printGrid()
+myGrid.newStep()
+print(myGrid.getTotAlive())
+#myGrid.printGrid()
+myGrid.newStep()
+print(myGrid.getTotAlive())
+#myGrid.printGrid()
+myGrid.newStep()
+print(myGrid.getTotAlive())
+#myGrid.printGrid()
