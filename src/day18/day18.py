@@ -1,66 +1,63 @@
 homeworkFile=open("homework.txt","r")
 
-class Node:
-    def __init__(self,expression):
-        if(len(expression)==1):
-            self.data=expression[0]
-            self.left=None
-            self.right=None
-            return
-        if(")" in expression[-1]):
-            #print(expression)
-            count=expression[-1].count(")")
-            i=-2
-            while count!=0:
-                count-=expression[i].count("(")
-                count+=expression[i].count(")")
-                i-=1
-            if i==-len(expression)-1:
-                newExpression=[expression[0][1:]]+expression[1:-1]+[expression[-1].strip("\n")[:-1]]
-                self.left=Node(["0"])
-                self.data="+"
-                self.right=Node(newExpression)
-            else:
-                self.left=Node(expression[:i])
-                self.data=expression[i]
-                self.right=Node(expression[i+1:])
-        else:
-            self.left=Node(expression[:-2])
-            self.data=expression[-2]
-            self.right=Node([expression[-1]])
+# I looked at https://www.tutorialspoint.com/Convert-Infix-to-Postfix-Expression for part 2 and modified it to suit the problem
 
-    def eval(self):
-        if self.data.strip("(").strip(")").isnumeric():
-            #if(a==0):
-            #    print(int(self.data.strip("\n").strip("(").strip(")")))
-            #return self.data.strip("(").strip(")")
-            return int(self.data.strip("\n").strip("(").strip(")"))
+def preced(ch):
+    if ch=="+" or ch=="-":
+        return 2
+    elif ch=="/" or ch=="x" or ch=="*": # for part 1, modify this to return 2
+        return 1
+    else:
+        return 0
+
+def inToPost(infix):
+    stk=[]
+    stk.append("#")
+    postFix=[]
+    for ch in infix:
+        if ch.isnumeric():
+            postFix+=[ch]
+        elif ch=="(":
+            stk.append(ch)
+        elif ch==")":
+            while(stk[-1]!="#" and stk[-1]!="("):
+                newCh=stk.pop(-1)
+                #print("a",newCh)
+                postFix+=[newCh]
+            stk.pop()
         else:
-            if(self.data=="*"):
-                #return "("+self.left.eval()+"*"+self.right.eval()+")"
-                return self.left.eval()*self.right.eval()
-            elif(self.data=="+"):
-                #return "("+self.left.eval()+"+"+self.right.eval()+")"
-                return self.left.eval()+self.right.eval()
-            elif(self.data=="-"):
-                #return "("+self.left.eval()+"-"+self.right.eval()+")"
-                return self.left.eval()-self.right.eval()
-            elif(self.data=="/"):
-                #return "("+self.left.eval()+"/"+self.right.eval()+")"
-                return self.left.eval()/self.right.eval()
+            if preced(ch)>preced(stk[-1]):
+                stk.append(ch)
             else:
-                print([self.data])
-                print("sthing went wrong")
-                return None
+                while(stk[-1]!="#" and preced(ch)<=preced(stk[-1])):
+                    newCh=stk.pop(-1)
+                    postFix+=[newCh]
+                stk.append(ch)
+    while len(stk)>1:
+        newCh=stk.pop(-1)
+        #print("C",newCh)
+        postFix+=[newCh]
+    return postFix
+
+def evalPost(postFix):
+    stk=[]
+    for char in postFix:
+        if char.isnumeric():
+            stk.append(char)
+        else:
+            oper1=stk.pop(-1)
+            oper2=stk.pop(-1)
+            if char=="+":
+                stk.append(int(oper1)+int(oper2))
+            elif char=="*":
+                stk.append(int(oper1)*int(oper2))
+    return stk[0]
 
 acc=0
-a=0
 for line in homeworkFile:
-    expression=line.strip("\n").split(" ")
-    node=Node(expression)
-    answer=node.eval()
-    print(answer)
-    a+=1
+    expression=line.strip("\n")
+    expression=inToPost(expression.replace(" ",""))
+    answer=evalPost(expression)
     acc+=answer
 
 print(acc)
