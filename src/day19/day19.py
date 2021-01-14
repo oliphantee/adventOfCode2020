@@ -1,7 +1,5 @@
 inputFile=open("input.txt")
-allRules=[]
-
-import copy as cp
+allRules={}
 
 class Rule:
     def __init__(self,id):
@@ -9,46 +7,46 @@ class Rule:
         self.orList=[]
         self.letter=None
 
+    def __str__(self):
+        retStr=str(self.id)+":"
+        if self.letter!=None:
+            retStr+=" "+self.letter+" "
+        else:
+            for andList in self.orList:
+                for ruleId in andList:
+                    retStr+=" " + str(allRules[ruleId].id)
+                retStr+=" |"
+        return retStr[:-1]
+
     def define(self,line,allRules):
-        if line.strip('"').isalpha():
+        if '"' in line:
             self.letter=line.strip('"')[0]
-        theOrList=line.split("|")
+        theOrList=line.split(" | ")
         for i in range(len(theOrList)):
             self.orList+=[[]]
             andList=theOrList[i].split(" ")
             for j in range(len(andList)):
                 self.orList[i]+=[[]]
-                isFilled=False
-                for rule in allRules:
-                    if rule.id==andList[j]:
-                        self.orList[i][j]=rule
-                        isFilled=True
-                if(isFilled==False):
-                    self.orList[i][j]=Rule(andList[j])
+                self.orList[i][j]=andList[j]
 
-    def evaluate(self,aString):
-        # print(self.id,aString)
-        # print(self.orList)
-        # print(self.letter)
-        bstring=cp.deepcopy(aString)
+
+    def evaluate(self,posStrings):
+        newPosStrings=[]
         if self.letter!=None:
-            if bstring[0]==self.letter:
-                return True, bstring[1:]
-            else:
-                return False, bstring[1:]
-        isOr=False
-        for ruleSet in self.orList:
-            isTrue=True
-            for rule in ruleSet:
-                isTrue,bstring=rule.evaluate(bstring)
-                if(isTrue==False):
-                    break
-            if(isTrue==False):
-                bstring=cp.deepcopy(aString)
-            if(isTrue==True):
-                isOr=True
-                break
-        return isOr, bstring
+            for bstring in posStrings:
+                if len(bstring)>0 and bstring[0]==self.letter:
+                    newPosStrings.append(bstring[1:])
+        else:
+            for andList in self.orList:
+                curPosStrings=posStrings
+                isTrue=True
+                for rule in andList:
+                    isTrue,curPosStrings=allRules[rule].evaluate(curPosStrings)
+                    if(isTrue==False):
+                        break
+                if(isTrue==True):
+                    newPosStrings+=curPosStrings
+        return len(newPosStrings)!=0, newPosStrings
 
 ruleZero=None
 count=0
@@ -57,15 +55,13 @@ for line in inputFile:
     if(len(line.split(":"))>1):
         id=line.split(":")[0]
         aRule=Rule(id)
-        allRules+=[aRule]
+        allRules[id]=aRule
         aRule.define(line.split(":")[1].strip("\n").strip(" "),allRules)
-        # if id=="65":
-        #     print(line.split(":")[1].strip("\n").strip(" "))
         if id=="0":
             ruleZero=aRule
-    else:
-        if(count!=0):
-            print(ruleZero.evaluate(line.strip("\n")))
-        count=1
+    elif len(line)>1:
+        answer=ruleZero.evaluate([line.strip("\n")])
+        if(answer[0] and "" in answer[1]):
+            count+=1
 
-print(ruleZero.evaluate("b"))
+print(count)
